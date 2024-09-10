@@ -17,6 +17,8 @@ class LLMPrompt:
             },
         }
 
+    TITLE = 'LLM Prompt'
+
     RETURN_TYPES = ('STRING',)
     RETURN_NAMES = ('prompt',)
 
@@ -64,6 +66,8 @@ class OpenAILikeLLM:
             }
         }
 
+    TITLE = 'OpenAI-like LLM'
+
     RETURN_TYPES = ('STRING',)
     RETURN_NAMES = ('completion',)
 
@@ -101,9 +105,4 @@ class OpenAILikeLLM:
 NODE_CLASS_MAPPINGS = {
     'LLMPrompt': LLMPrompt,
     'OpenAILikeLLM': OpenAILikeLLM,
-}
-
-NODE_DISPLAY_NAME_MAPPINGS = {
-    'LLMPrompt': 'LLM Prompt',
-    'OpenAILikeLLM': 'OpenAI-like LLM',
 }
