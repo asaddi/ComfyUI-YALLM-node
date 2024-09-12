@@ -3,10 +3,50 @@ import os
 import openai
 
 
-class LLMPrompt:
-    def __init__(self):
-        pass
+class LLMConfig:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            'required': {
+                'base_url': ('STRING', {
+                    'multiline': False,
+                    'default': 'http://localhost:8080/v1',
+                }),
+            },
+            'optional': {
+                'api_key_env_var': ('STRING', {
+                    'multiline': False,
+                    'default': '',
+                }),
+            }
+        }
 
+    TITLE = 'OpenAI-like LLM Config'
+
+    RETURN_TYPES = ('LLMCONFIG',)
+
+    FUNCTION = 'execute'
+
+    CATEGORY = 'YALLM'
+
+    def execute(self, base_url, api_key_env_var):
+        api_key = "none" # The openai module needs *something*
+        if api_key_env_var:
+            api_key = os.environ[api_key_env_var] # TODO is there a way to fail gracefully or at least display error message?
+
+        llm = openai.OpenAI(base_url=base_url, api_key=api_key)
+
+        models = [m.id for m in llm.models.list()]
+
+        llmconfig = {
+            'llm': llm,
+            'models': models,
+        }
+
+        return (llmconfig,)
+
+
+class LLMPrompt:
     @classmethod
     def INPUT_TYPES(cls):
         return {
@@ -30,25 +70,32 @@ class LLMPrompt:
         return (prompt,)
 
 
-class OpenAILikeLLM:
-    def __init__(self):
-        # TODO If we have base_url (or maybe if a particular switch is true), attempt to fetch models from endpoint.
-        # Is this where we would do it?
-        pass
+class LLMChat:
+    _MODEL_CACHE: dict[str,list[str]] = {}
+
+    @classmethod
+    def _get_models(cls) -> list[str]:
+        # TODO Kludge for now, just merge everyone's list of models
+        models = []
+        for v in cls._MODEL_CACHE.values():
+            models.extend(v)
+        models.sort()
+
+        if not models:
+            models = ['default'] # Needs to have at least 1 value so we can execute this node...
+
+        return models
 
     @classmethod
     def INPUT_TYPES(cls):
         return {
             'required': {
+                'llmconfig': ('LLMCONFIG', { 'forceInput': True }),
                 'user_prompt': ('STRING', {
                     'forceInput': True,
                 }),
-                'base_url': ('STRING', {
-                    'multiline': False,
-                    'default': 'http://localhost:8080/v1',
-                }),
-                'model': (['model1', 'model2', 'model3'], {
-                    'default': 'model1', # TODO
+                'model': (cls._get_models(), {  # Hmm, we don't have access to our UNIQUE_ID...
+                    'default': 'default',
                 }),
                 'temperature': ('FLOAT', {
                     'min': 0.0,
@@ -59,14 +106,13 @@ class OpenAILikeLLM:
                 'system_prompt': ('STRING', {
                     'forceInput': True,
                 }),
-                'api_key_env_var': ('STRING', {
-                    'multiline': False,
-                    'default': '',
-                }),
+            },
+            'hidden': {
+                'unique_id': 'UNIQUE_ID',
             }
         }
 
-    TITLE = 'OpenAI-like LLM'
+    TITLE = 'LLM Chat'
 
     RETURN_TYPES = ('STRING',)
     RETURN_NAMES = ('completion',)
@@ -75,16 +121,11 @@ class OpenAILikeLLM:
 
     CATEGORY = 'YALLM'
 
-    # def check_lazy_status(self, user_prompt, base_url, model, system_prompt, api_key_env_var):
-    #     # TODO don't really have anything lazy yet
-    #     return []
-
-    def execute(self, user_prompt, base_url, model, temperature, system_prompt=None, api_key_env_var=None):
-        api_key = "none" # The openai module needs *something*
-        if api_key_env_var:
-            api_key = os.environ[api_key_env_var] # TODO is there a way to fail gracefully or at least display error message?
-
-        llm = openai.OpenAI(base_url=base_url, api_key=api_key)
+    def execute(self, llmconfig, user_prompt, model, temperature, unique_id, system_prompt=None):
+        llm = llmconfig['llm']
+        # TODO need to figure out how to deal with this properly
+        # Maybe create an API endpoint and then modify the frontend (ugh) to deal with the combo select?
+        LLMChat._MODEL_CACHE[unique_id] = llmconfig['models']
 
         messages = []
         if system_prompt:
@@ -103,6 +144,7 @@ class OpenAILikeLLM:
 
 
 NODE_CLASS_MAPPINGS = {
+    'LLMConfig': LLMConfig,
     'LLMPrompt': LLMPrompt,
-    'OpenAILikeLLM': OpenAILikeLLM,
+    'LLMChat': LLMChat,
 }
