@@ -46,45 +46,22 @@ class LLMConfig:
         return (llmconfig,)
 
 
-class LLMPrompt:
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            'required': {
-                'prompt': ('STRING', {
-                    'multiline': True,
-                })
-            },
-        }
-
-    TITLE = 'LLM Prompt'
-
-    RETURN_TYPES = ('STRING',)
-    RETURN_NAMES = ('prompt',)
-
-    FUNCTION = 'execute'
-
-    CATEGORY = 'YALLM'
-
-    def execute(self, prompt):
-        return (prompt,)
-
-
 class LLMChat:
     _MODEL_CACHE: dict[str,list[str]] = {}
 
     @classmethod
     def _get_models(cls) -> list[str]:
         # TODO Kludge for now, just merge everyone's list of models
-        models = []
+        models = set([])
         for v in cls._MODEL_CACHE.values():
-            models.extend(v)
-        models.sort()
+            models.update(v)
 
-        if not models:
-            models = ['default'] # Needs to have at least 1 value so we can execute this node...
+        models.add('default') # Needs to have at least 1 value so we can execute this node...
 
-        return models
+        result = list(models)
+        result.sort()
+
+        return result
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -92,19 +69,20 @@ class LLMChat:
             'required': {
                 'llmconfig': ('LLMCONFIG', { 'forceInput': True }),
                 'user_prompt': ('STRING', {
-                    'forceInput': True,
+                    'multiline': True,
                 }),
-                'model': (cls._get_models(), {  # Hmm, we don't have access to our UNIQUE_ID...
-                    'default': 'default',
-                }),
+                'model': (cls._get_models(), {}),  # Hmm, we don't have access to our UNIQUE_ID...
                 'temperature': ('FLOAT', {
                     'min': 0.0,
                     'default': 0.8,
                 }),
+                'seed': ('INT', { # Thankfully, frontend has special handling for a widget of this name...
+                    'max': 0xffffffff_ffffffff_ffffffff_ffffffff, # TODO what's the actual acceptable range??
+                })
             },
             'optional': {
                 'system_prompt': ('STRING', {
-                    'forceInput': True,
+                    'multiline': True,
                 }),
             },
             'hidden': {
@@ -121,11 +99,14 @@ class LLMChat:
 
     CATEGORY = 'YALLM'
 
-    def execute(self, llmconfig, user_prompt, model, temperature, unique_id, system_prompt=None):
+    def execute(self, llmconfig, user_prompt, model, temperature, seed, unique_id, system_prompt=None):
         llm = llmconfig['llm']
         # TODO need to figure out how to deal with this properly
         # Maybe create an API endpoint and then modify the frontend (ugh) to deal with the combo select?
         LLMChat._MODEL_CACHE[unique_id] = llmconfig['models']
+
+        if model == 'default':
+            model = llmconfig['models'][0]
 
         messages = []
         if system_prompt:
@@ -135,6 +116,7 @@ class LLMChat:
         output = llm.chat.completions.create(
             messages=messages,
             model=model,
+            seed=seed,
             temperature=temperature,
         )
 
@@ -145,6 +127,5 @@ class LLMChat:
 
 NODE_CLASS_MAPPINGS = {
     'LLMConfig': LLMConfig,
-    'LLMPrompt': LLMPrompt,
     'LLMChat': LLMChat,
 }
