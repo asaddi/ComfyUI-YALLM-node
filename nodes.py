@@ -1,93 +1,97 @@
 import os
+from typing import Optional
 
 import openai
+from pydantic import BaseModel
+import yaml
 
 
-class LLMConfig:
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            'required': {
-                'base_url': ('STRING', {
-                    'multiline': False,
-                    'default': 'http://localhost:8080/v1',
-                }),
-            },
-            'optional': {
-                'api_key_env_var': ('STRING', {
-                    'multiline': False,
-                    'default': '',
-                }),
-            }
-        }
+BASE_PATH = os.path.dirname(os.path.realpath(__file__))
 
-    TITLE = 'OpenAI-like LLM Config'
 
-    RETURN_TYPES = ('LLMCONFIG',)
+class ModelDefinition(BaseModel):
+    name: str
+    base_url: str
+    api_key: Optional[str]
+    model: str
 
-    FUNCTION = 'execute'
 
-    CATEGORY = 'YALLM'
+class Models:
+    LIST: list[ModelDefinition] = []
+    BY_NAME: dict[str,ModelDefinition] = {}
+    CHOICES: list[str] = []
 
-    def execute(self, base_url, api_key_env_var):
-        api_key = "none" # The openai module needs *something*
-        if api_key_env_var:
-            api_key = os.environ[api_key_env_var] # TODO is there a way to fail gracefully or at least display error message?
+    def load(self) -> None:
+        with open(os.path.join(BASE_PATH, 'models.yaml')) as inp:
+            d = yaml.load(inp, yaml.Loader)
 
-        llm = openai.OpenAI(base_url=base_url, api_key=api_key)
+        for value in d['models']:
+            self.LIST.append(ModelDefinition.model_validate(value))
+        if not self.LIST:
+            raise RuntimeError('Need at least one model defined')
+        self.BY_NAME = { d.name: d for d in self.LIST }
+        self.CHOICES = [ d.name for d in self.LIST ]
 
-        models = [m.id for m in llm.models.list()]
+    def get_base_url(self, name: str) -> str:
+        base_url = self.BY_NAME[name].base_url
+        return Models._get_env_or_value(base_url)
 
-        llmconfig = {
-            'llm': llm,
-            'models': models,
-        }
+    def get_api_key(self, name: str) -> str | None:
+        api_key = self.BY_NAME[name].api_key
+        if api_key:
+            api_key = Models._get_env_or_value(api_key)
+        if not api_key or api_key == 'none':
+            return None
+        return api_key
 
-        return (llmconfig,)
+    def get_model(self, name: str) -> str:
+        return self.BY_NAME[name].model
+
+    @staticmethod
+    def _get_env_or_value(value: str) -> str:
+        """
+        Retrieves the value from either an environment variable or a provided string.
+
+        Args:
+            value (str): The value to retrieve. It can be a string literal or a string
+                starting with 'os.environ/' followed by an environment variable name.
+
+        Returns:
+            str: The retrieved value.
+        """
+        PREFIX = 'os.environ/'
+        if value.startswith(PREFIX):
+            env_var = value[len(PREFIX):]
+            value = os.environ[env_var]
+        return value
+
+
+MODELS = Models()
+MODELS.load()
 
 
 class LLMChat:
-    _MODEL_CACHE: dict[str,list[str]] = {}
-
-    @classmethod
-    def _get_models(cls) -> list[str]:
-        # TODO Kludge for now, just merge everyone's list of models
-        models = set([])
-        for v in cls._MODEL_CACHE.values():
-            models.update(v)
-
-        models.add('default') # Needs to have at least 1 value so we can execute this node...
-
-        result = list(models)
-        result.sort()
-
-        return result
-
     @classmethod
     def INPUT_TYPES(cls):
         return {
             'required': {
-                'llmconfig': ('LLMCONFIG', { 'forceInput': True }),
-                'user_prompt': ('STRING', {
-                    'multiline': True,
-                }),
-                'model': (cls._get_models(), {}),  # Hmm, we don't have access to our UNIQUE_ID...
+                'model': (MODELS.CHOICES,),
                 'temperature': ('FLOAT', {
                     'min': 0.0,
                     'default': 0.8,
                 }),
                 'seed': ('INT', { # Thankfully, frontend has special handling for a widget of this name...
                     'max': 0xffffffff_ffffffff_ffffffff_ffffffff, # TODO what's the actual acceptable range??
-                })
+                }),
+                'user_prompt': ('STRING', {
+                    'multiline': True,
+                }),
             },
             'optional': {
                 'system_prompt': ('STRING', {
                     'multiline': True,
                 }),
             },
-            'hidden': {
-                'unique_id': 'UNIQUE_ID',
-            }
         }
 
     TITLE = 'LLM Chat'
@@ -99,14 +103,11 @@ class LLMChat:
 
     CATEGORY = 'YALLM'
 
-    def execute(self, llmconfig, user_prompt, model, temperature, seed, unique_id, system_prompt=None):
-        llm = llmconfig['llm']
-        # TODO need to figure out how to deal with this properly
-        # Maybe create an API endpoint and then modify the frontend (ugh) to deal with the combo select?
-        LLMChat._MODEL_CACHE[unique_id] = llmconfig['models']
-
-        if model == 'default':
-            model = llmconfig['models'][0]
+    def execute(self, model, temperature, seed, user_prompt, system_prompt=None):
+        llm = openai.OpenAI(
+            base_url=MODELS.get_base_url(model),
+            api_key=(MODELS.get_api_key(model) or 'none'),
+        )
 
         messages = []
         if system_prompt:
@@ -115,7 +116,7 @@ class LLMChat:
 
         output = llm.chat.completions.create(
             messages=messages,
-            model=model,
+            model=MODELS.get_model(model),
             seed=seed,
             temperature=temperature,
         )
@@ -126,6 +127,5 @@ class LLMChat:
 
 
 NODE_CLASS_MAPPINGS = {
-    'LLMConfig': LLMConfig,
     'LLMChat': LLMChat,
 }

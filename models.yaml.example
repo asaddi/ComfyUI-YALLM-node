@@ -1,0 +1,14 @@
+models:
+  - name: "[LOCAL] llama.cpp:
+    base_url: http://localhost:8080/v1
+    api_key: none
+    model: whatever
+
+# Example of using a remote endpoint
+# If prefixed with "os-environ/" (similar to LiteLLM), base_url and/or api_key
+# will take their value from the named environment variable.
+
+#  - name: "[OpenRouter] Llama-3.1-8B-Instruct"
+#    base_url: https://openrouter.ai/api/v1
+#    api_key: os-environ/OPENROUTER_API_KEY
+#    model: meta-llama/llama-3.1-8b-instruct:free
