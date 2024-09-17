@@ -160,7 +160,7 @@ class LLMMinP(LLMTemperature):
     TITLE = 'LLM Min-P'
 
 
-# TODO typical_p? Any others? mirostat?
+# TODO typical_p? tfs_z? Any others? mirostat?
 
 
 class LLMChat:
@@ -207,14 +207,17 @@ class LLMChat:
             messages.append({'role': 'system', 'content': system_prompt})
         messages.append({'role': 'user', 'content': user_prompt})
 
+        samplers = []
         extra_args = {}
         extra_body = {}
         for k,v in llm_sampler:
+            samplers.append(k)
             if k in ('temperature', 'top_p'): # The only ones supported directly by openai package
                 extra_args[k] = v
             else:
                 # The rest have to go into "extra_body"
                 extra_body[k] = v
+        extra_body['samplers'] = samplers # Hopefully won't cause an issue for non-llama.cpp endpoints
 
         # print(f'extra_args = {repr(extra_args)}')
         # print(f'extra_body = {repr(extra_body)}')
