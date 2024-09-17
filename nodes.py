@@ -70,16 +70,105 @@ MODELS = Models()
 MODELS.load()
 
 
+class SamplerDefinition(BaseModel):
+    name: str
+    is_int: bool
+    min: Optional[float|int] = None
+    default: float|int
+    max: Optional[float|int] = None
+
+    def to_input_type(self):
+        constraints = {}
+        if self.min is not None:
+            constraints['min'] = self.min
+        if self.max is not None:
+            constraints['max'] = self.max
+        constraints['default'] = self.default
+        return {
+            self.name: ('INT' if self.is_int else 'FLOAT', constraints)
+        }
+
+
+class LLMTemperature:
+    _DEF = SamplerDefinition(
+        name='temperature',
+        is_int=False,
+        min=0.0,
+        default=0.8,
+    )
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            'required': cls._DEF.to_input_type(),
+            'optional': {
+                'previous': ('LLMSAMPLER',),
+            },
+        }
+
+    TITLE = 'LLM Temperature'
+
+    RETURN_TYPES = ('LLMSAMPLER',)
+    RETURN_NAMES = ('llmsampler',)
+
+    FUNCTION = 'execute'
+
+    CATEGORY = 'YALLM/samplers'
+
+    def execute(self, previous=None, **args):
+        value = args[self._DEF.name]
+
+        if previous is None:
+            previous = []
+
+        previous.append((self._DEF.name, value))
+
+        return (previous,)
+
+
+class LLMTopP(LLMTemperature):
+    _DEF = SamplerDefinition(
+        name='top_p',
+        is_int=False,
+        min=0.0,
+        default=0.95,
+        max=1.0,
+    )
+
+    TITLE = 'LLM Top-P'
+
+class LLMTopK(LLMTemperature):
+    _DEF = SamplerDefinition(
+        name='top_k',
+        is_int=True,
+        min=1,
+        default=40,
+    )
+
+    TITLE = 'LLM Top-K'
+
+
+class LLMMinP(LLMTemperature):
+    _DEF = SamplerDefinition(
+        name='min_p',
+        is_int=False,
+        min=0.0,
+        default=0.05,
+        max=1.0,
+    )
+
+    TITLE = 'LLM Min-P'
+
+
+# TODO typical_p? Any others? mirostat?
+
+
 class LLMChat:
     @classmethod
     def INPUT_TYPES(cls):
         return {
             'required': {
                 'model': (MODELS.CHOICES,),
-                'temperature': ('FLOAT', {
-                    'min': 0.0,
-                    'default': 0.8,
-                }),
                 'seed': ('INT', { # Thankfully, frontend has special handling for a widget of this name...
                     'max': 0xffffffff_ffffffff_ffffffff_ffffffff, # TODO what's the actual acceptable range??
                 }),
@@ -88,6 +177,7 @@ class LLMChat:
                 }),
             },
             'optional': {
+                'llm_sampler': ('LLMSAMPLER', ),
                 'system_prompt': ('STRING', {
                     'multiline': True,
                 }),
@@ -103,7 +193,10 @@ class LLMChat:
 
     CATEGORY = 'YALLM'
 
-    def execute(self, model, temperature, seed, user_prompt, system_prompt=None):
+    def execute(self, model, seed, user_prompt, llm_sampler=None, system_prompt=None):
+        if llm_sampler is None:
+            llm_sampler = []
+
         llm = openai.OpenAI(
             base_url=MODELS.get_base_url(model),
             api_key=(MODELS.get_api_key(model) or 'none'),
@@ -114,11 +207,24 @@ class LLMChat:
             messages.append({'role': 'system', 'content': system_prompt})
         messages.append({'role': 'user', 'content': user_prompt})
 
+        extra_args = {}
+        extra_body = {}
+        for k,v in llm_sampler:
+            if k in ('temperature', 'top_p'): # The only ones supported directly by openai package
+                extra_args[k] = v
+            else:
+                # The rest have to go into "extra_body"
+                extra_body[k] = v
+
+        # print(f'extra_args = {repr(extra_args)}')
+        # print(f'extra_body = {repr(extra_body)}')
+
         output = llm.chat.completions.create(
             messages=messages,
             model=MODELS.get_model(model),
             seed=seed,
-            temperature=temperature,
+            extra_body=extra_body,
+            **extra_args
         )
 
         # TODO Since we're not streaming, we'll need some sort of timeout. How to specify that?
@@ -128,4 +234,8 @@ class LLMChat:
 
 NODE_CLASS_MAPPINGS = {
     'LLMChat': LLMChat,
+    'LLMTemperature': LLMTemperature,
+    'LLMTopP': LLMTopP,
+    'LLMTopK': LLMTopK,
+    'LLMMinP': LLMMinP,
 }
