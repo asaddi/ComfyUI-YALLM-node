@@ -1,5 +1,5 @@
 import os
-from typing import Optional
+from typing import Any, Optional
 
 import openai
 from pydantic import BaseModel
@@ -109,7 +109,7 @@ class LLMTemperature:
     TITLE = 'LLM Temperature'
 
     RETURN_TYPES = ('LLMSAMPLER',)
-    RETURN_NAMES = ('llmsampler',)
+    RETURN_NAMES = ('llm_sampler',)
 
     FUNCTION = 'execute'
 
@@ -137,6 +137,7 @@ class LLMTopP(LLMTemperature):
 
     TITLE = 'LLM Top-P'
 
+
 class LLMTopK(LLMTemperature):
     _DEF = SamplerDefinition(
         name='top_k',
@@ -163,12 +164,80 @@ class LLMMinP(LLMTemperature):
 # TODO typical_p? tfs_z? Any others? mirostat?
 
 
-class LLMChat:
+# TODO Will we need a more complex definition? (e.g. multi-modal)
+ChatMessage = dict[str,str]
+ChatHistory = list[ChatMessage]
+
+SamplerSetting = tuple[str,Any]
+
+
+class LLMModel:
+    def __init__(self, model: str):
+        self._llm = openai.OpenAI(
+            base_url=MODELS.get_base_url(model),
+            api_key=(MODELS.get_api_key(model) or 'none'), # openai package requires something for API key
+        )
+        self._model = MODELS.get_model(model)
+
+    def chat_completion(self, messages: ChatHistory, samplers: list[SamplerSetting]|None=None, seed: int|None=None) -> str:
+        sampler_order = []
+        extra_args = {}
+        extra_body = {}
+        for k,v in samplers:
+            sampler_order.append(k)
+            if k in ('temperature', 'top_p'): # The only ones supported directly by openai package
+                extra_args[k] = v
+            else:
+                # The rest have to go into "extra_body"
+                extra_body[k] = v
+        extra_body['samplers'] = sampler_order # Hopefully won't cause an issue for non-llama.cpp endpoints
+
+        # print(f'extra_args = {repr(extra_args)}')
+        # print(f'extra_body = {repr(extra_body)}')
+
+        output = self._llm.chat.completions.create(
+            messages=messages,
+            model=self._model,
+            seed=seed,
+            extra_body=extra_body,
+            **extra_args
+        )
+
+        # TODO Since we're not streaming, we'll need some sort of timeout. How to specify that?
+
+        return (output.choices[0].message.content,)
+
+
+class LLMModelNode:
     @classmethod
     def INPUT_TYPES(cls):
         return {
             'required': {
                 'model': (MODELS.CHOICES,),
+            },
+        }
+
+    TITLE = 'LLM Model (API)'
+
+    RETURN_TYPES = ('LLMMODEL',)
+    RETURN_NAMES = ('llm_model',)
+
+    FUNCTION = 'execute'
+
+    CATEGORY = 'YALLM'
+
+    def execute(self, model):
+        llm = LLMModel(model)
+
+        return (llm,)
+
+
+class LLMChat:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            'required': {
+                'llm_model': ('LLMMODEL',),
                 'seed': ('INT', { # Thankfully, frontend has special handling for a widget of this name...
                     'max': 0xffffffff_ffffffff_ffffffff_ffffffff, # TODO what's the actual acceptable range??
                 }),
@@ -193,49 +262,22 @@ class LLMChat:
 
     CATEGORY = 'YALLM'
 
-    def execute(self, model, seed, user_prompt, llm_sampler=None, system_prompt=None):
+    def execute(self, llm_model: LLMModel, seed, user_prompt, llm_sampler=None, system_prompt=None):
         if llm_sampler is None:
             llm_sampler = []
-
-        llm = openai.OpenAI(
-            base_url=MODELS.get_base_url(model),
-            api_key=(MODELS.get_api_key(model) or 'none'),
-        )
 
         messages = []
         if system_prompt:
             messages.append({'role': 'system', 'content': system_prompt})
         messages.append({'role': 'user', 'content': user_prompt})
 
-        samplers = []
-        extra_args = {}
-        extra_body = {}
-        for k,v in llm_sampler:
-            samplers.append(k)
-            if k in ('temperature', 'top_p'): # The only ones supported directly by openai package
-                extra_args[k] = v
-            else:
-                # The rest have to go into "extra_body"
-                extra_body[k] = v
-        extra_body['samplers'] = samplers # Hopefully won't cause an issue for non-llama.cpp endpoints
+        result = llm_model.chat_completion(messages, samplers=llm_sampler, seed=seed)
 
-        # print(f'extra_args = {repr(extra_args)}')
-        # print(f'extra_body = {repr(extra_body)}')
-
-        output = llm.chat.completions.create(
-            messages=messages,
-            model=MODELS.get_model(model),
-            seed=seed,
-            extra_body=extra_body,
-            **extra_args
-        )
-
-        # TODO Since we're not streaming, we'll need some sort of timeout. How to specify that?
-
-        return (output.choices[0].message.content,)
+        return (result,)
 
 
 NODE_CLASS_MAPPINGS = {
+    'LLMModel': LLMModelNode,
     'LLMChat': LLMChat,
     'LLMTemperature': LLMTemperature,
     'LLMTopP': LLMTopP,
