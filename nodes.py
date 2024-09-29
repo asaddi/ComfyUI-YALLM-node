@@ -181,6 +181,9 @@ class LLMModel:
         self._model = MODELS.get_model(model)
 
     def chat_completion(self, messages: ChatHistory, samplers: list[SamplerSetting]|None=None, seed: int|None=None) -> str:
+        if samplers is None:
+            samplers = []
+
         sampler_order = []
         extra_args = {}
         extra_body = {}
@@ -193,13 +196,15 @@ class LLMModel:
                 extra_body[k] = v
         extra_body['samplers'] = sampler_order # Hopefully won't cause an issue for non-llama.cpp endpoints
 
+        if seed is not None:
+            extra_args['seed'] = seed
+
         # print(f'extra_args = {repr(extra_args)}')
         # print(f'extra_body = {repr(extra_body)}')
 
         output = self._llm.chat.completions.create(
             messages=messages,
             model=self._model,
-            seed=seed,
             extra_body=extra_body,
             **extra_args
         )
@@ -240,7 +245,11 @@ class LLMChat:
             'required': {
                 'llm_model': ('LLMMODEL',),
                 'seed': ('INT', { # Thankfully, frontend has special handling for a widget of this name...
-                    'max': 0xffffffff_ffffffff_ffffffff_ffffffff, # TODO what's the actual acceptable range??
+                    # min/max/default from the KSampler nodes
+                    # llama.cpp is only 32-bit (with truncation, no doubt), OpenAI API spec doesn't specify a size
+                    'min': 0,
+                    'default': 0,
+                    'max': 0xffffffff_ffffffff,
                 }),
                 'user_prompt': ('STRING', {
                     'multiline': True,
@@ -264,9 +273,6 @@ class LLMChat:
     CATEGORY = 'YALLM'
 
     def execute(self, llm_model: LLMModel, seed, user_prompt, llm_sampler=None, system_prompt=None):
-        if llm_sampler is None:
-            llm_sampler = []
-
         messages = []
         if system_prompt:
             messages.append({'role': 'system', 'content': system_prompt})
