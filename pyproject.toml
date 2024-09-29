@@ -1,0 +1,15 @@
+[project]
+name = "comfyui-yallm-node"
+description = "Yet another set of LLM nodes for ComfyUI. This one only supports OpenAI-like APIs, but of course can be used with local LLM providers such as [a/llama.cpp](https://github.com/ggerganov/llama.cpp) (and, I believe, ollama and LMStudio, among others)."
+version = "1.0.0"
+license = {file = "LICENSE"}
+dependencies = ["openai"]
+
+[project.urls]
+Repository = "https://github.com/asaddi/ComfyUI-YALLM-node"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = ""
+DisplayName = "ComfyUI-YALLM-node"
+Icon = ""
