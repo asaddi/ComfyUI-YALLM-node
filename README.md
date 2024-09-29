@@ -15,7 +15,7 @@ This project mainly served as an exercise in creating ComfyUI nodes.
    Since they're externally defined, there's no chance for your precious API keys to leak via workflow metadata.
 * Only uses the chat completion API endpoint. No messing around with prompt templates.
 * Can set a system prompt.
-* The usual set LLM samplers (temperature, top-k, top-p, min-p)
+* The usual set of LLM samplers (temperature, top-k, top-p, min-p)
 
    For llama.cpp at least, the order you chain them together affects their order of application. (Other llama.cpp-derived providers might also respect the `samplers` option.)
 
