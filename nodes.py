@@ -23,7 +23,13 @@ class Models:
     CHOICES: list[str] = []
 
     def load(self) -> None:
-        with open(os.path.join(BASE_PATH, 'models.yaml')) as inp:
+        models_file = os.path.join(BASE_PATH, 'models.yaml')
+        if not os.path.exists(models_file):
+            # Just read from the example for now
+            print(f'WARNING: {models_file} does not exist; using default')
+            models_file = os.path.join(BASE_PATH, 'models.yaml.example')
+
+        with open(models_file) as inp:
             d = yaml.load(inp, yaml.Loader)
 
         for value in d['models']:
