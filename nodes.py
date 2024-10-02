@@ -22,22 +22,35 @@ class Models:
     BY_NAME: dict[str,ModelDefinition] = {}
     CHOICES: list[str] = []
 
+    _mtime = None
+
     def load(self) -> None:
-        models_file = os.path.join(BASE_PATH, 'models.yaml')
-        if not os.path.exists(models_file):
-            # Just read from the example for now
-            print(f'WARNING: {models_file} does not exist; using default')
-            models_file = os.path.join(BASE_PATH, 'models.yaml.example')
+        models_file = self._get_models_file()
 
         with open(models_file) as inp:
             d = yaml.load(inp, yaml.Loader)
+        self._mtime = (models_file, os.path.getmtime(models_file))
 
+        self.LIST = []
         for value in d['models']:
             self.LIST.append(ModelDefinition.model_validate(value))
         if not self.LIST:
             raise RuntimeError('Need at least one model defined')
         self.BY_NAME = { d.name: d for d in self.LIST }
         self.CHOICES = [ d.name for d in self.LIST ]
+
+    def _get_models_file(self):
+        models_file = os.path.join(BASE_PATH, 'models.yaml')
+        if not os.path.exists(models_file):
+            # Just read from the example for now
+            print(f'WARNING: {models_file} does not exist; using default')
+            models_file = os.path.join(BASE_PATH, 'models.yaml.example')
+        return models_file
+
+    def refresh(self):
+        models_file = self._get_models_file()
+        if self._mtime != (models_file, os.path.getmtime(models_file)):
+            self.load()
 
     def get_base_url(self, name: str) -> str:
         base_url = self.BY_NAME[name].base_url
@@ -223,6 +236,7 @@ class LLMModel:
 class LLMModelNode:
     @classmethod
     def INPUT_TYPES(cls):
+        MODELS.refresh()
         return {
             'required': {
                 'model': (MODELS.CHOICES,),
