@@ -36,11 +36,7 @@ Then within the `ComfyUI-YALLM-node` directory:
 
 and edit `models.yaml` if you would like to use more than just the `http://localhost:8080/v1` endpoint.
 
-Finally, install the [openai](https://pypi.org/project/openai/) Python package (currently the only dependency):
-
-    pip install openai
-
-or
+Finally, install the dependencies:
 
     pip install -r requirements.txt
 
