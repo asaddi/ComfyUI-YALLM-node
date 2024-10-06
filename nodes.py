@@ -1,9 +1,13 @@
 # Copyright (c) 2024 Allan Saddi <allan@saddi.com>
+import base64
+from io import BytesIO
 import os
 from typing import Any, Optional
 
 import openai
+from PIL.Image import Image
 from pydantic import BaseModel
+import torchvision.transforms.functional as F
 import yaml
 
 
@@ -199,7 +203,34 @@ class LLMModel:
         )
         self._model = MODELS.get_model(model)
 
-    def chat_completion(self, messages: ChatHistory, samplers: list[SamplerSetting]|None=None, seed: int|None=None) -> str:
+    def chat_completion(self, messages: ChatHistory, image: Image|None=None, samplers: list[SamplerSetting]|None=None, seed: int|None=None) -> str:
+        if image is not None:
+            # Work backwards through history
+            for msg in reversed(messages):
+                # And grab the very last user message we see
+                if msg.get('role') == 'user':
+                    parts = msg.get('content', [])
+                    if isinstance(parts, str):
+                        parts = [{'type': 'text', 'text': parts}]
+
+                    # Convert image to data URI format
+                    png_io = BytesIO()
+                    image.save(png_io, 'PNG')
+                    png_b64 = base64.b64encode(png_io.getbuffer()).decode('ascii')
+
+                    # And insert image just before the user prompt
+                    parts.insert(0, {
+                        'type': 'image_url',
+                        'image_url': {
+                            'url': f'data:image/png;base64,{png_b64}'
+                        }
+                    })
+
+                    msg['content'] = parts
+                    break
+
+        # print(messages)
+
         if samplers is None:
             samplers = []
 
@@ -280,6 +311,7 @@ class LLMChat:
                 'system_prompt': ('STRING', {
                     'multiline': True,
                 }),
+                'image': ('IMAGE',),
             },
         }
 
@@ -287,18 +319,33 @@ class LLMChat:
 
     RETURN_TYPES = ('STRING',)
     RETURN_NAMES = ('completion',)
+    OUTPUT_IS_LIST = (True,)
 
     FUNCTION = 'execute'
 
     CATEGORY = 'YALLM'
 
-    def execute(self, llm_model: LLMModel, seed, user_prompt, llm_sampler=None, system_prompt=None):
+    def execute(self, llm_model: LLMModel, seed, user_prompt, llm_sampler=None, system_prompt=None, image=None):
         messages = []
         if system_prompt:
             messages.append({'role': 'system', 'content': system_prompt})
         messages.append({'role': 'user', 'content': user_prompt})
 
-        result = llm_model.chat_completion(messages, samplers=llm_sampler, seed=seed)
+        result = []
+        if image is None:
+            text = llm_model.chat_completion(messages, samplers=llm_sampler, seed=seed)
+            result.append(text)
+        else:
+            image = image.permute(0, 3, 1, 2) # Convert to [B,C,H,W]
+            for img in image:
+                pil_image = F.to_pil_image(img)
+                # Fortunately or unfortunately, I'm forced to have this conform
+                # to the conventions of my LlamaVision node.
+                # I think it would be cleaner to do the conversion here, but
+                # I have no idea how that would work for a local
+                # Transformers model.
+                text = llm_model.chat_completion(messages, image=pil_image, samplers=llm_sampler, seed=seed)
+                result.append(text)
 
         return (result,)
 

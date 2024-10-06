@@ -21,6 +21,7 @@ This project mainly served as an exercise in creating ComfyUI nodes.
 
    Also note that the OpenAI API spec only officially supports temperature and top-p, so what's actually supported will depend on your provider.
 * Seed is exposed and configurable, allowing some degree of determinism.
+* Can optionally pass in an image and query the LLM about it. Of course this means the LLM at your remote API needs to support images. Also be mindful that some VLMs like Llama 3.2 Vision don't support a system prompt when prompting with an image. (Some providers will just silently fail!)
 
 Aside from adding more samplers (as requested/as I need them), I consider this project feature complete.
 

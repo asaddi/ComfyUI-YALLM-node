@@ -1,3 +1,7 @@
 openai
 pydantic
+
+# These should already be installed by ComfyUI
+pillow
 pyyaml
+torchvision
