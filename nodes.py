@@ -20,6 +20,35 @@ class ModelDefinition(BaseModel):
     api_key: Optional[str]
     model: str
 
+    def resolve_base_url(self) -> str:
+        return ModelDefinition._get_env_or_value(self.base_url)
+
+    def resolve_api_key(self) -> str|None:
+        api_key = self.api_key
+        if api_key:
+            api_key = ModelDefinition._get_env_or_value(api_key)
+        if not api_key or api_key == 'none':
+            return None
+        return api_key
+
+    @staticmethod
+    def _get_env_or_value(value: str) -> str:
+        """
+        Retrieves the value from either an environment variable or a provided string.
+
+        Args:
+            value (str): The value to retrieve. It can be a string literal or a string
+                starting with 'os.environ/' followed by an environment variable name.
+
+        Returns:
+            str: The retrieved value.
+        """
+        PREFIX = 'os.environ/'
+        if value.startswith(PREFIX):
+            env_var = value[len(PREFIX):]
+            value = os.environ[env_var]
+        return value
+
 
 class Models:
     LIST: list[ModelDefinition] = []
@@ -55,39 +84,6 @@ class Models:
         models_file = self._get_models_file()
         if self._mtime != (models_file, os.path.getmtime(models_file)):
             self.load()
-
-    def get_base_url(self, name: str) -> str:
-        base_url = self.BY_NAME[name].base_url
-        return Models._get_env_or_value(base_url)
-
-    def get_api_key(self, name: str) -> str | None:
-        api_key = self.BY_NAME[name].api_key
-        if api_key:
-            api_key = Models._get_env_or_value(api_key)
-        if not api_key or api_key == 'none':
-            return None
-        return api_key
-
-    def get_model(self, name: str) -> str:
-        return self.BY_NAME[name].model
-
-    @staticmethod
-    def _get_env_or_value(value: str) -> str:
-        """
-        Retrieves the value from either an environment variable or a provided string.
-
-        Args:
-            value (str): The value to retrieve. It can be a string literal or a string
-                starting with 'os.environ/' followed by an environment variable name.
-
-        Returns:
-            str: The retrieved value.
-        """
-        PREFIX = 'os.environ/'
-        if value.startswith(PREFIX):
-            env_var = value[len(PREFIX):]
-            value = os.environ[env_var]
-        return value
 
 
 MODELS = Models()
@@ -196,12 +192,12 @@ SamplerSetting = tuple[str,Any]
 
 
 class LLMModel:
-    def __init__(self, model: str):
+    def __init__(self, model: ModelDefinition):
         self._llm = openai.OpenAI(
-            base_url=MODELS.get_base_url(model),
-            api_key=(MODELS.get_api_key(model) or 'none'), # openai package requires something for API key
+            base_url=model.resolve_base_url(),
+            api_key=(model.resolve_api_key() or 'none'), # openai package requires something for API key
         )
-        self._model = MODELS.get_model(model)
+        self._model = model.model
 
     def chat_completion(self, messages: ChatHistory, image: Image|None=None, samplers: list[SamplerSetting]|None=None, seed: int|None=None) -> str:
         if image is not None:
@@ -284,7 +280,7 @@ class LLMModelNode:
     CATEGORY = 'YALLM'
 
     def execute(self, model):
-        llm = LLMModel(model)
+        llm = LLMModel(MODELS.BY_NAME[model])
 
         return (llm,)
 
