@@ -47,6 +47,10 @@ or
 
 Just make sure `pip`/`python` is the same one used for your ComfyUI installation.
 
+## My Related Projects
+
+* https://github.com/asaddi/YALLM-LlamaVision Basic ComfyUI node for Llama 3.2 Vision. Sampler/model nodes are cross-compatible with this project.
+
 ## License
 
 Licensed under [BSD-2-Clause-Patent](https://opensource.org/license/bsdpluspatent).
