@@ -301,16 +301,10 @@ class LLMProvider:
     def INPUT_TYPES(cls):
         PROVIDERS.refresh()
 
-        # At this point, we have no idea which provider the user selected.
-        # However, our API endpoint should have been called at least once.
-        merged_models = set([])
-        for model_list in CACHED_MODELS.values():
-            merged_models.update(model_list)
-
         return {
             'required': {
                 'provider': (PROVIDERS.CHOICES,),
-                'model': (list(merged_models),)
+                'model': (['re-select.provider.to.fetch'],)
             },
         }
 
