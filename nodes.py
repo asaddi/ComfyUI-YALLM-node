@@ -4,29 +4,32 @@ from io import BytesIO
 import os
 from typing import Any, Optional
 
+from aiohttp import web
+from aiohttp.web_request import Request
 import openai
 from PIL.Image import Image
 from pydantic import BaseModel
 import torchvision.transforms.functional as F
 import yaml
 
+from server import PromptServer
+
 
 BASE_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
-class ModelDefinition(BaseModel):
+class ProviderDefinition(BaseModel):
     name: str
     base_url: str
     api_key: Optional[str]
-    model: str
 
     def resolve_base_url(self) -> str:
-        return ModelDefinition._get_env_or_value(self.base_url)
+        return ProviderDefinition._get_env_or_value(self.base_url)
 
     def resolve_api_key(self) -> str|None:
         api_key = self.api_key
         if api_key:
-            api_key = ModelDefinition._get_env_or_value(api_key)
+            api_key = ProviderDefinition._get_env_or_value(api_key)
         if not api_key or api_key == 'none':
             return None
         return api_key
@@ -50,14 +53,14 @@ class ModelDefinition(BaseModel):
         return value
 
 
-class Models:
-    LIST: list[ModelDefinition] = []
-    BY_NAME: dict[str,ModelDefinition] = {}
-    CHOICES: list[str] = []
+class ModelDefinition(ProviderDefinition):
+    model: str
 
+
+class DefinitionsConfig:
     _mtime = None
 
-    def load(self) -> None:
+    def load(self, def_type) -> None:
         models_file = self._get_models_file()
 
         with open(models_file) as inp:
@@ -65,19 +68,19 @@ class Models:
         self._mtime = (models_file, os.path.getmtime(models_file))
 
         self.LIST = []
-        for value in d['models']:
-            self.LIST.append(ModelDefinition.model_validate(value))
+        for value in d[self._root]:
+            self.LIST.append(def_type.model_validate(value))
         if not self.LIST:
-            raise RuntimeError('Need at least one model defined')
+            raise RuntimeError(f'{models_file}: Need at least one definition')
         self.BY_NAME = { d.name: d for d in self.LIST }
         self.CHOICES = [ d.name for d in self.LIST ]
 
     def _get_models_file(self):
-        models_file = os.path.join(BASE_PATH, 'models.yaml')
+        models_file = os.path.join(BASE_PATH, self._config)
         if not os.path.exists(models_file):
             # Just read from the example for now
-            # print(f'WARNING: {models_file} does not exist; using default')
-            models_file = os.path.join(BASE_PATH, 'models.yaml.example')
+            # print(f'{models_file} does not exist; using default')
+            models_file = os.path.join(BASE_PATH, self._config_default)
         return models_file
 
     def refresh(self):
@@ -85,6 +88,27 @@ class Models:
         if self._mtime != (models_file, os.path.getmtime(models_file)):
             self.load()
 
+
+class Providers(DefinitionsConfig):
+    _root = 'providers'
+    _config = 'providers.yaml'
+    _config_default = 'providers.yaml.example'
+
+    def load(self):
+        return super().load(ProviderDefinition)
+
+
+class Models(DefinitionsConfig):
+    _root = 'models'
+    _config = 'models.yaml'
+    _config_default = 'models.yaml.example'
+
+    def load(self):
+        return super().load(ModelDefinition)
+
+
+PROVIDERS = Providers()
+PROVIDERS.load()
 
 MODELS = Models()
 MODELS.load()
@@ -192,14 +216,23 @@ SamplerSetting = tuple[str,Any]
 
 
 class LLMModel:
-    def __init__(self, model: ModelDefinition):
+    def __init__(self, prov_def: ProviderDefinition, model: str|None=None):
         self._llm = openai.OpenAI(
-            base_url=model.resolve_base_url(),
-            api_key=(model.resolve_api_key() or 'none'), # openai package requires something for API key
+            base_url=prov_def.resolve_base_url(),
+            api_key=(prov_def.resolve_api_key() or 'none'), # openai package requires something for API key
         )
-        self._model = model.model
+        if model is None:
+            self._model = getattr(prov_def, 'model', None)
+        else:
+            self._model = model
+
+    def get_models(self):
+        models = list(self._llm.models.list())
+        return [m.id for m in models]
 
     def chat_completion(self, messages: ChatHistory, image: Image|None=None, samplers: list[SamplerSetting]|None=None, seed: int|None=None) -> str:
+        assert self._model is not None
+
         if image is not None:
             # Work backwards through history
             for msg in reversed(messages):
@@ -258,6 +291,46 @@ class LLMModel:
         # TODO Since we're not streaming, we'll need some sort of timeout. How to specify that?
 
         return output.choices[0].message.content
+
+
+class LLMProvider:
+    @classmethod
+    def INPUT_TYPES(cls):
+        PROVIDERS.refresh()
+
+        return {
+            'required': {
+                'provider': (PROVIDERS.CHOICES,),
+                'model': (['fetch.models.first'],)
+            },
+        }
+
+    @classmethod
+    def IS_CHANGED(cls, provider, model):
+        PROVIDERS.refresh()
+        return PROVIDERS._mtime
+
+    @classmethod
+    def VALIDATE_INPUTS(cls, model):
+        if model in ('fetch.models.first', 'failed.to.fetch'):
+            return 'fetch models and make a selection first'
+
+        # Ass-u-me the frontend validated the choices
+        return True
+
+    TITLE = 'LLM Provider (API)'
+
+    RETURN_TYPES = ('LLMMODEL',)
+    RETURN_NAMES = ('llm_model',)
+
+    FUNCTION = 'execute'
+
+    CATEGORY = 'YALLM'
+
+    def execute(self, provider, model):
+        llm = LLMModel(PROVIDERS.BY_NAME[provider], model=model)
+
+        return (llm,)
 
 
 class LLMModelNode:
@@ -351,7 +424,26 @@ class LLMChat:
         return (result,)
 
 
+@PromptServer.instance.routes.get("/llm_models")
+async def llm_models(request: Request):
+    name = request.rel_url.query.get('name', None)
+    if name:
+        PROVIDERS.refresh()
+        if (prov_def := PROVIDERS.BY_NAME.get(name, None)) is not None:
+            try:
+                llm = LLMModel(prov_def)
+                models = llm.get_models()
+                return web.json_response(models)
+            except Exception as e:
+                print(f'Problem fetching models: {e}')
+                # Just eat it and fall through.
+
+    # Fail, but don't error out
+    return web.json_response(['failed.to.fetch'])
+
+
 NODE_CLASS_MAPPINGS = {
+    'LLMProvider': LLMProvider,
     'LLMModel': LLMModelNode,
     'LLMChat': LLMChat,
     'LLMTemperature': LLMTemperature,
