@@ -76,7 +76,7 @@ class Models:
         models_file = os.path.join(BASE_PATH, 'models.yaml')
         if not os.path.exists(models_file):
             # Just read from the example for now
-            print(f'WARNING: {models_file} does not exist; using default')
+            # print(f'WARNING: {models_file} does not exist; using default')
             models_file = os.path.join(BASE_PATH, 'models.yaml.example')
         return models_file
 
@@ -269,6 +269,11 @@ class LLMModelNode:
                 'model': (MODELS.CHOICES,),
             },
         }
+
+    @classmethod
+    def IS_CHANGED(cls, model):
+        MODELS.refresh()
+        return MODELS._mtime
 
     TITLE = 'LLM Model (API)'
 
