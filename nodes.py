@@ -79,7 +79,7 @@ class DefinitionsConfig:
         models_file = os.path.join(BASE_PATH, self._config)
         if not os.path.exists(models_file):
             # Just read from the example for now
-            print(f'{models_file} does not exist; using default')
+            # print(f'{models_file} does not exist; using default')
             models_file = os.path.join(BASE_PATH, self._config_default)
         return models_file
 
@@ -314,7 +314,12 @@ class LLMProvider:
             },
         }
 
-    TITLE = 'LLM Provider (API)'
+    @classmethod
+    def IS_CHANGED(cls, provider, model):
+        PROVIDERS.refresh()
+        return PROVIDERS._mtime
+
+    TITLE = 'LLM Provider (Beta)'
 
     RETURN_TYPES = ('LLMMODEL',)
     RETURN_NAMES = ('llm_model',)
@@ -338,6 +343,11 @@ class LLMModelNode:
                 'model': (MODELS.CHOICES,),
             },
         }
+
+    @classmethod
+    def IS_CHANGED(cls, model):
+        MODELS.refresh()
+        return MODELS._mtime
 
     TITLE = 'LLM Model (API)'
 
