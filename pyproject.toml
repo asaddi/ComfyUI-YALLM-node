@@ -1,6 +1,6 @@
 [project]
 name = "comfyui-yallm-node"
-description = "Yet another set of LLM nodes for ComfyUI. This one only supports OpenAI-like APIs, but of course can be used with local LLM providers such as llama.cpp, ollama and LMStudio, among others."
+description = "Yet another set of LLM nodes for ComfyUI (for local/remote OpenAI-like APIs, multi-modal models supported)"
 version = "1.1.0"
 license = {file = "LICENSE.txt"}
 dependencies = [
