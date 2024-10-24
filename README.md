@@ -47,6 +47,22 @@ or
 
 Just make sure `pip`/`python` is the same one used for your ComfyUI installation.
 
+## "LLM Provider" Node
+
+As an alternative to the "LLM Model" node (where you map "virtual" models to API providers+models), there is also an "LLM Provider" node. This node is a low-setup alternative, as you only have to define providers/connections. The available models are fetched dynamically, allowing you to make a selection in the UI.
+
+To configure it, from within the `ComfyUI-YALLM-node` directory:
+
+    cp providers.yaml.example providers.yaml
+
+and then edit `providers.yaml` to taste. It is very similar to `models.yaml` and has the same features, such as environment variable substitution.
+
+You can then use the "LLM Provider" node in place of "LLM Model", like so:
+
+![example provider workflow](yallm-provider-example.png)
+
+When you click the "fetch models" button, or select a different provider, a query will be made to the currently selected provider's `/v1/models` API endpoint. Note: The node will error out (intentionally) if this hasn't been done successfully at least once.
+
 ## My Related Projects
 
 * https://github.com/asaddi/YALLM-LlamaVision Basic ComfyUI node for Llama 3.2 Vision. Sampler/model nodes are cross-compatible with this project.
