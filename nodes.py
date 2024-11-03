@@ -143,6 +143,8 @@ class LLMTextLatch:
 
     FUNCTION = 'execute'
 
+    OUTPUT_NODE = True
+
     CATEGORY = 'YALLM'
 
     def execute(self, text, text_input=None):
