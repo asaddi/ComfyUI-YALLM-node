@@ -114,6 +114,47 @@ MODELS = Models()
 MODELS.load()
 
 
+class LLMTextLatch:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            'required': {
+                'text': ('STRING', {
+                    'multiline': True,
+                }),
+            },
+            'optional': {
+                'text_input': ('STRING', {
+                    'forceInput': True,
+                    'multiline': True,
+                }),
+            },
+        }
+
+    @classmethod
+    def VALIDATE_INPUTS(cls, text):
+        # Always valid, even if empty
+        return True
+
+    TITLE = 'Text Latch'
+
+    RETURN_TYPES = ('STRING',)
+    RETURN_NAMES = ('text',)
+
+    FUNCTION = 'execute'
+
+    CATEGORY = 'YALLM'
+
+    def execute(self, text, text_input=None):
+        if text_input is not None:
+            text = text_input
+
+        if text is None:
+            text = ''
+
+        return { 'ui': { 'text': text }, 'result': (text,) }
+
+
 class SamplerDefinition(BaseModel):
     name: str
     is_int: bool
@@ -443,6 +484,7 @@ async def llm_models(request: Request):
 
 
 NODE_CLASS_MAPPINGS = {
+    'LLMTextLatch': LLMTextLatch,
     'LLMProvider': LLMProvider,
     'LLMModel': LLMModelNode,
     'LLMChat': LLMChat,

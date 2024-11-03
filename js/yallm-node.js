@@ -3,7 +3,7 @@ import { api } from "../../scripts/api.js";
 app.registerExtension({
 	name: "YALLM.node",
     async beforeRegisterNodeDef(nodeType, nodeData, app) {
-        if (nodeType.comfyClass=="LLMProvider") {
+        if (nodeType.comfyClass==="LLMProvider") {
             nodeType.prototype.myRefreshModels = function (node, name) {
                 if (!name) name = node.widgets[0].value;
 
@@ -53,5 +53,18 @@ app.registerExtension({
             )
             btn.serializeValue = () => void 0;
         }
+
+        else if (node?.comfyClass==="LLMTextLatch") {
+            node.widgets[0].inputEl.readOnly = true;
+        }
     },
+    async setup() {
+        api.addEventListener("executed", function (event) {
+            var node = app.graph.getNodeById(event.detail.node);
+            if (node?.comfyClass==="LLMTextLatch") {
+                node.widgets[0].value = event.detail.output.text.join("");
+                app.graph.setDirtyCanvas(true, false);
+            }
+        });
+    }
 })
