@@ -63,6 +63,12 @@ You can then use the "LLM Provider" node in place of "LLM Model", like so:
 
 When you click the "fetch models" button, or select a different provider, a query will be made to the currently selected provider's `/v1/models` API endpoint. Note: The node will error out (intentionally) if this hasn't been done successfully at least once.
 
+## "Text Latch" Node
+
+This is basically "Show Text" with memory. The input is optional, meaning you can mute the node leading into it or even disconnect it.
+
+The node will output whatever is currently being displayed. The node text will also be saved in exported workflows and generated images.
+
 ## My Related Projects
 
 * https://github.com/asaddi/YALLM-LlamaVision Basic ComfyUI node for Llama 3.2 Vision. Sampler/model nodes are cross-compatible with this project.
