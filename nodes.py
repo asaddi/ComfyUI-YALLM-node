@@ -122,6 +122,9 @@ class LLMTextLatch:
                 'text': ('STRING', {
                     'multiline': True,
                 }),
+                'replace': ('BOOLEAN', {
+                    'default': True,
+                })
             },
             'optional': {
                 'text_input': ('STRING', {
@@ -147,8 +150,8 @@ class LLMTextLatch:
 
     CATEGORY = 'YALLM'
 
-    def execute(self, text, text_input=None):
-        if text_input is not None:
+    def execute(self, text, replace, text_input=None):
+        if text_input is not None and replace:
             text = text_input
 
         if text is None:

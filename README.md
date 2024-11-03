@@ -1,12 +1,10 @@
 # Yet Another LLM Node (for ComfyUI)
 
-Yet another set of LLM nodes for [ComfyUI](https://github.com/comfyanonymous/ComfyUI). This one only supports OpenAI-like APIs, but of course can be used with local LLM providers such as [llama.cpp](https://github.com/ggerganov/llama.cpp) (and, I believe, ollama and LMStudio, among others).
+Yet another set of LLM nodes for [ComfyUI](https://github.com/comfyanonymous/ComfyUI). This one only supports OpenAI-like APIs, but of course can be used with local LLM providers such as [llama.cpp](https://github.com/ggerganov/llama.cpp) (and ollama, LM Studio, among many others).
 
 This project mainly served as an exercise in creating ComfyUI nodes.
 
 ![sample workflow](yallm-sample.png)
-
-(the "Show Text" node is from the very useful https://github.com/pythongosssss/ComfyUI-Custom-Scripts)
 
 ## Features
 
@@ -65,9 +63,11 @@ When you click the "fetch models" button, or select a different provider, a quer
 
 ## "Text Latch" Node
 
-This is basically "Show Text" with memory. The input is optional, meaning you can mute the node leading into it or even disconnect it.
+This is basically "Show Text" with memory. Whenever the node is executed, if there is an input and if the "replace" switch is true, the incoming string will replace the contents of the textbox.
 
-The node will output whatever is currently being displayed. The node text will also be saved in exported workflows and generated images.
+The input is optional, meaning you can mute the node leading into it or even disconnect it.
+
+The node will output whatever is currently being displayed in the textbox. The node text will also be saved in exported workflows and generated images.
 
 ## My Related Projects
 

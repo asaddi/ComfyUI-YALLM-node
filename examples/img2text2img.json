@@ -384,7 +384,7 @@
         "Node name for S&R": "KSampler"
       },
       "widgets_values": [
-        304557854546485,
+        13910517299447,
         "randomize",
         40,
         5.5,
@@ -525,10 +525,10 @@
         "0": -1008,
         "1": 2
       },
-      "size": [
-        342.8335266113281,
-        177.20867919921875
-      ],
+      "size": {
+        "0": 342.8335266113281,
+        "1": 177.20867919921875
+      },
       "flags": {},
       "order": 13,
       "mode": 0,
@@ -568,16 +568,54 @@
       "bgcolor": "#353"
     },
     {
+      "id": 304,
+      "type": "LoadImage",
+      "pos": {
+        "0": -2350,
+        "1": 300
+      },
+      "size": {
+        "0": 315,
+        "1": 314
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            609
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "example.png",
+        "image"
+      ]
+    },
+    {
       "id": 301,
       "type": "LLMTextLatch",
       "pos": {
         "0": -1500,
         "1": 150
       },
-      "size": [
-        400,
-        200
-      ],
+      "size": {
+        "0": 400,
+        "1": 200
+      },
       "flags": {},
       "order": 11,
       "mode": 0,
@@ -606,8 +644,43 @@
         "Node name for S&R": "LLMTextLatch"
       },
       "widgets_values": [
-        "The image presents a charming scene of a fairy standing on a green hill under a blue sky dotted with white clouds. The fairy, with her blonde hair and blue eyes, is dressed in a pink dress and white shoes. Her arms are outstretched, as if she's embracing the world around her. The image is simple yet delightful, capturing the essence of a fairy tale.",
+        "In the image, a person with blonde hair is captured in a moment of joy, their smile radiating warmth. They are standing against a backdrop of a serene landscape, composed of a rolling hill blanketed in lush green grass. The sky above them is a clear blue, dotted with fluffy white clouds, adding to the overall tranquility of the scene. The person's attire consists of a pink top and white pants, a color combination that stands out against the green and blue background. The image is simple yet vivid, with each element precisely located to create a harmonious composition.",
+        true,
         ""
+      ]
+    },
+    {
+      "id": 303,
+      "type": "LLMProvider",
+      "pos": {
+        "0": -2350,
+        "1": 100
+      },
+      "size": {
+        "0": 318.2536315917969,
+        "1": 106
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "llm_model",
+          "type": "LLMMODEL",
+          "links": [
+            608
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LLMProvider"
+      },
+      "widgets_values": [
+        "OpenRouter",
+        "openrouter/mistralai/pixtral-12b",
+        "models"
       ]
     },
     {
@@ -650,90 +723,18 @@
           "links": [
             607
           ],
-          "shape": 6,
-          "slot_index": 0
+          "slot_index": 0,
+          "shape": 6
         }
       ],
       "properties": {
         "Node name for S&R": "LLMChat"
       },
       "widgets_values": [
-        12882032747369,
+        819376686150074,
         "randomize",
         "Describe the image in detail",
         ""
-      ]
-    },
-    {
-      "id": 304,
-      "type": "LoadImage",
-      "pos": {
-        "0": -2350,
-        "1": 300
-      },
-      "size": [
-        315,
-        314
-      ],
-      "flags": {},
-      "order": 4,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            609
-          ],
-          "slot_index": 0
-        },
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "links": null
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "LoadImage"
-      },
-      "widgets_values": [
-        "example.png",
-        "image"
-      ]
-    },
-    {
-      "id": 303,
-      "type": "LLMProvider",
-      "pos": {
-        "0": -2350,
-        "1": 100
-      },
-      "size": [
-        318.2536328125002,
-        106
-      ],
-      "flags": {},
-      "order": 5,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "llm_model",
-          "type": "LLMMODEL",
-          "links": [
-            608
-          ],
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "LLMProvider"
-      },
-      "widgets_values": [
-        "OpenRouter",
-        "openrouter/mistralai/pixtral-12b",
-        "models"
       ]
     }
   ],
@@ -896,10 +897,10 @@
   "extra": {
     "ds": {
       "scale": 0.8264462809917354,
-      "offset": {
-        "0": 2455.454345703125,
-        "1": 204.22216796875
-      }
+      "offset": [
+        2080.858098000003,
+        266.35047800000154
+      ]
     }
   },
   "version": 0.4

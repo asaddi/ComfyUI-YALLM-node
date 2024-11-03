@@ -3,40 +3,6 @@
   "last_link_id": 4,
   "nodes": [
     {
-      "id": 1,
-      "type": "LLMProvider",
-      "pos": {
-        "0": 200,
-        "1": 250
-      },
-      "size": {
-        "0": 301,
-        "1": 106
-      },
-      "flags": {},
-      "order": 0,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "llm_model",
-          "type": "LLMMODEL",
-          "links": [
-            3
-          ],
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "LLMProvider"
-      },
-      "widgets_values": [
-        "[LOCAL] llama.cpp",
-        "Meta-Llama-3.1-8B-Instruct",
-        "models"
-      ]
-    },
-    {
       "id": 3,
       "type": "LLMTemperature",
       "pos": {
@@ -87,7 +53,7 @@
         "1": 58
       },
       "flags": {},
-      "order": 1,
+      "order": 0,
       "mode": 0,
       "inputs": [
         {
@@ -150,8 +116,43 @@
         "Node name for S&R": "LLMTextLatch"
       },
       "widgets_values": [
-        "\"A delicate, antique glass bottle, its surface etched with a beautiful, swirling pattern that resembles a purple galaxy, stands majestically on a rocky outcropping, surrounded by a breathtaking, serene landscape of rolling hills and towering trees. The bottle's colors blend seamlessly with the soft, pastel hues of the sky above, creating a sense of continuity between the natural world and the mystical, otherworldly object. The surrounding environment is bathed in a warm, golden light, with the gentle rustle of leaves and the distant songs of birds filling the air. The glass bottle seems almost ethereal, as if it has been plucked from the stars themselves and placed gently in this idyllic setting. The overall mood is one of peace and tranquility, as if the very essence of the universe has been distilled into this one, perfect moment.\"",
+        "\"A surreal, dreamlike landscape unfolds with a striking juxtaposition of natural and manufactured elements. A serene, untouched landscape stretches out to the horizon, with rolling hills, towering trees, and a shimmering lake in the distance. However, in the foreground, a beautiful, delicate glass bottle rises organically from the earth, as if grown from the very land itself. The bottle's curves and contours blend seamlessly with the surrounding scenery, giving it an otherworldly, almost ethereal quality. But what truly sets this scene apart is the bottle's peculiar contents: a swirling, purple galaxy of colors, reminiscent of a distant nebula, fills the bottle, casting an enchanting, iridescent glow across the surrounding landscape. The soft, golden light of dawn or dusk casts a warm, gentle ambiance over the entire scene, imbuing the image with a sense of wonder, magic, and a deep connection to the mysteries of the universe.\"",
+        true,
         ""
+      ]
+    },
+    {
+      "id": 1,
+      "type": "LLMProvider",
+      "pos": {
+        "0": 200,
+        "1": 250
+      },
+      "size": {
+        "0": 301,
+        "1": 106
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "llm_model",
+          "type": "LLMMODEL",
+          "links": [
+            3
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LLMProvider"
+      },
+      "widgets_values": [
+        "[LOCAL] llama.cpp",
+        "Meta-Llama-3.1-8B-Instruct",
+        "models"
       ]
     },
     {
@@ -202,7 +203,7 @@
         "Node name for S&R": "LLMChat"
       },
       "widgets_values": [
-        342478814200503,
+        475392180035454,
         "randomize",
         "beautiful scenery nature glass bottle landscape, purple galaxy bottle,",
         "You are a text-to-image-prompt generator. You take simple user input and translate it into a detailed and eloquent simple natural language prompt meant for generating images.\n\nEXAMPLES:\nUser Input: \"young woman taking a selfie in a mirror with old iPhone\"\n\nOutput: \"Phone photo: A young woman stands in front of a mirror, capturing a selfie. The image quality is grainy, with a slight blur softening the details. The lighting is dim, casting shadows that obscure her features. The room is cluttered, with clothes strewn across the bed and an unmade blanket. Her expression is casual, full of concentration, while the old iPhone struggles to focus, giving the photo an authentic, unpolished feel. The mirror shows smudges and fingerprints, adding to the raw, everyday atmosphere of the scene.\"\n\nUser Input: \"1940s film noir jazz bar scene glamorous woman singing\"\n\nOutput: \"A black-and-white, grainy cine still from a 1940s noir film scene of a dimly lit jazz club. In the center of the frame, a glamorous femme fatale stands on a small stage, singing into a vintage microphone. She is wearing a sequined evening gown that catches the soft, moody spotlight, and her hair is styled in classic Hollywood waves. Her expression is sultry and captivating, her lips painted dark as she croons a melancholic tune. The room is filled with a thick haze of cigarette smoke, and the silhouettes of patrons sit at small, round tables, their faces partially obscured by shadows. The band behind her, blurred slightly to give depth to the scene. The grainy texture and high contrast lighting create dramatic shadows and highlights, enhancing the mysterious and seductive atmosphere typical of a noir film.\"\n\nUser Input: \"fox in a raincoat in a rainy moody forest\"\n\nOutput: \"A solitary fox stands in the middle of a deserted, rain-soaked forest clearing, wearing a bright yellow raincoat that contrasts with the dark, muted colors of the scene. Raindrops fall steadily, creating ripples in the puddles that surround the fox, and the damp ground is covered with fallen leaves, now heavy with rain. In the background, the trees loom tall and bare, their branches reaching out like skeletal fingers, adding to the somber mood. The gray sky is heavy with clouds, casting a shadowy gloom over the entire scene, with only the fox’s yellow raincoat providing a small but poignant splash of color in the otherwise bleak environment.\"\n\nOUTPUT ONLY THE GENERATED PROMPT.\n"
@@ -247,10 +248,10 @@
   "config": {},
   "extra": {
     "ds": {
-      "scale": 1,
+      "scale": 0.9090909090909091,
       "offset": [
-        -165,
-        -82
+        -148.99999999999997,
+        8.4
       ]
     }
   },
