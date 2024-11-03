@@ -53,10 +53,6 @@ app.registerExtension({
             )
             btn.serializeValue = () => void 0;
         }
-
-        else if (node?.comfyClass==="LLMTextLatch") {
-            node.widgets[0].inputEl.readOnly = true;
-        }
     },
     async setup() {
         api.addEventListener("executed", function (event) {
