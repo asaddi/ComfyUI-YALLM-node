@@ -1,14 +1,15 @@
 # Copyright (c) 2024 Allan Saddi <allan@saddi.com>
+import asyncio
 import base64
 from io import BytesIO
 import os
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 from aiohttp import web
 from aiohttp.web_request import Request
-import openai
 from PIL.Image import Image
 from pydantic import BaseModel
+import requests
 import torchvision.transforms.functional as F
 import yaml
 
@@ -263,29 +264,87 @@ class LLMMinP(LLMTemperature):
 # TODO typical_p? tfs_z? Any others? mirostat?
 
 
-# TODO Will we need a more complex definition? (e.g. multi-modal)
-ChatMessage = dict[str, str]
-ChatHistory = list[ChatMessage]
+class ChatMessagePartText(BaseModel):
+    type: Literal["text"]
+    text: str
+
+
+class ChatMessageImageUrl(BaseModel):
+    url: str
+
+
+class ChatMessagePartImageUrl(BaseModel):
+    type: Literal["image_url"]
+    image_url: ChatMessageImageUrl
+
+
+class ChatCompletionMessage(BaseModel):
+    role: str
+    content: str | list[ChatMessagePartText | ChatMessagePartImageUrl]
+
+
+ChatHistory = list[ChatCompletionMessage]
 
 SamplerSetting = tuple[str, Any]
 
 
+class ChatCompletionRequest(BaseModel):
+    messages: ChatHistory
+    model: str
+    temperature: float | None = None
+    top_p: float | None = None
+    seed: int | None = None
+
+    top_k: int | None = None
+    min_p: float | None = None
+    samplers: list[str] | None = None
+
+
+class Model(BaseModel):
+    id: str
+    created: int
+    object: Literal["model"]
+    owned_by: str
+
+
+class ModelList(BaseModel):
+    object: Literal["list"]
+    data: list[Model]
+
+
 class LLMModel:
+    # Currently, this is the timeout for the /v1/models endpoint
+    _GET_TIMEOUT = (5, 60)
+    # And this is for /v1/chat/completions
+    _POST_TIMEOUT = (5, 300)
+
     def __init__(self, prov_def: ProviderDefinition, model: str | None = None):
-        self._llm = openai.OpenAI(
-            base_url=prov_def.resolve_base_url(),
-            api_key=(
-                prov_def.resolve_api_key() or "none"
-            ),  # openai package requires something for API key
-        )
+        self.base_url = prov_def.resolve_base_url().rstrip("/")
+        self.api_key = prov_def.resolve_api_key()
+
         if model is None:
             self._model = getattr(prov_def, "model", None)
         else:
             self._model = model
 
+    def _resolve_headers(self) -> dict | None:
+        return (
+            None
+            if self.api_key is None
+            else {
+                "Authorization": "Bearer " + self.api_key,
+            }
+        )
+
     def get_models(self):
-        models = list(self._llm.models.list())
-        return [m.id for m in models]
+        with requests.get(
+            self.base_url + "/models",
+            headers=self._resolve_headers(),
+            timeout=self._GET_TIMEOUT,
+        ) as response:
+            response.raise_for_status()
+            model_list = ModelList.model_validate_json(response.content, strict=False)
+        return [m.id for m in model_list.data]
 
     def chat_completion(
         self,
@@ -328,35 +387,34 @@ class LLMModel:
             samplers = []
 
         sampler_order = []
-        extra_args = {}
         extra_body = {}
         for k, v in samplers:
             sampler_order.append(k)
-            if k in (
-                "temperature",
-                "top_p",
-            ):  # The only ones supported directly by openai package
-                extra_args[k] = v
-            else:
-                # The rest have to go into "extra_body"
-                extra_body[k] = v
+            extra_body[k] = v
         extra_body["samplers"] = (
             sampler_order  # Hopefully won't cause an issue for non-llama.cpp endpoints
         )
 
         if seed is not None:
-            extra_args["seed"] = seed
+            extra_body["seed"] = seed
 
-        # print(f'extra_args = {repr(extra_args)}')
         # print(f'extra_body = {repr(extra_body)}')
 
-        output = self._llm.chat.completions.create(
-            messages=messages, model=self._model, extra_body=extra_body, **extra_args
+        request = ChatCompletionRequest(
+            messages=messages,
+            model=self._model,
+            **extra_body,
         )
 
-        # TODO Since we're not streaming, we'll need some sort of timeout. How to specify that?
+        with requests.post(
+            self.base_url + "/chat/completions",
+            json=ChatCompletionRequest.model_dump(request, mode="json"),
+            headers=self._resolve_headers(),
+            timeout=self._POST_TIMEOUT,
+        ) as response:
+            data = response.json()
 
-        return output.choices[0].message.content
+        return data["choices"][0]["message"]["content"]
 
 
 class LLMProvider:
@@ -517,7 +575,7 @@ async def llm_models(request: Request):
         if (prov_def := PROVIDERS.BY_NAME.get(name, None)) is not None:
             try:
                 llm = LLMModel(prov_def)
-                models = llm.get_models()
+                models = await asyncio.to_thread(llm.get_models)
                 return web.json_response(models)
             except Exception as e:
                 print(f"Problem fetching models: {e}")
