@@ -4,14 +4,14 @@ app.registerExtension({
 	name: "YALLM.node",
 	async beforeRegisterNodeDef(nodeType, nodeData, app) {
 		if (nodeType.comfyClass === "LLMProvider") {
-			nodeType.prototype.myRefreshModels = (node, name) => {
-				const provWidget = node.widgets.find(
+			nodeType.prototype.myRefreshModels = function (name) {
+				const provWidget = this.widgets.find(
 					(widget) => widget.name === "provider",
 				);
-				const modelWidget = node.widgets.find(
+				const modelWidget = this.widgets.find(
 					(widget) => widget.name === "model",
 				);
-				const fetchWidget = node.widgets.find(
+				const fetchWidget = this.widgets.find(
 					(widget) => widget.name === "fetch models",
 				);
 
@@ -56,7 +56,7 @@ app.registerExtension({
 			const original_callback = provWidget.callback;
 			provWidget.callback = function (...args) {
 				const name = args?.[0];
-				node.myRefreshModels(node, name);
+				node.myRefreshModels(name);
 				return original_callback?.apply(this, args);
 			};
 
@@ -65,7 +65,7 @@ app.registerExtension({
 
 			// Add button to fetch models manually
 			const btn = node.addWidget("button", "fetch models", "models", () => {
-				node.myRefreshModels(node);
+				node.myRefreshModels();
 			});
 			btn.serializeValue = () => void 0;
 		}
