@@ -77,7 +77,8 @@ app.registerExtension({
 				const textWidget = node.widgets.find(
 					(widget) => widget.name === "text",
 				);
-				textWidget.value = event.detail.output.text.join("");
+				const texts = event.detail.output.text;
+				textWidget.value = texts[texts.length - 1];
 				app.graph.setDirtyCanvas(true, false);
 			}
 		});

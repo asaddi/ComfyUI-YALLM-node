@@ -166,7 +166,9 @@ class LLMTextLatch:
         if text is None:
             text = ""
 
-        return {"ui": {"text": text}, "result": (text,)}
+        # An oddity: the values of the UI dictionary have to be wrapped in
+        # a tuple/list, just like the result?
+        return {"ui": {"text": (text,)}, "result": (text,)}
 
 
 class SamplerDefinition(BaseModel):
