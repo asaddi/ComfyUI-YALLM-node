@@ -138,6 +138,7 @@ class LLMTextLatch:
                     {
                         "forceInput": True,
                         "multiline": True,
+                        "lazy": True,
                     },
                 ),
             },
@@ -158,6 +159,12 @@ class LLMTextLatch:
     OUTPUT_NODE = True
 
     CATEGORY = "YALLM"
+
+    def check_lazy_status(self, text, replace, text_input=None):
+        if replace:
+            return ["text_input"]
+        else:
+            return []
 
     def execute(self, text, replace, text_input=None):
         if text_input is not None and replace:
