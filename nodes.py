@@ -138,8 +138,13 @@ class LLMTextLatch:
                     {
                         "forceInput": True,
                         "multiline": True,
+                        "lazy": True,
                     },
                 ),
+            },
+            "hidden": {
+                "unique_id": "UNIQUE_ID",
+                "prompt": "PROMPT",
             },
         }
 
@@ -159,7 +164,19 @@ class LLMTextLatch:
 
     CATEGORY = "YALLM"
 
-    def execute(self, text, replace, text_input=None):
+    def check_lazy_status(self, text, replace, unique_id, prompt, text_input=None):
+        node_info = prompt.get(str(unique_id), {})
+        text_input_input = node_info.get("inputs", {}).get("text_input", None)
+        # Do we have something connected to text_input?
+        if text_input_input is not None:
+            # Require whatever is connected to text_input to be evaluated
+            # contingent on replace.
+            if text_input is None and replace:
+                return ["text_input"]
+        # All good, nothing else needs to be evaluated
+        return []
+
+    def execute(self, text, replace, unique_id, prompt, text_input=None):
         if text_input is not None and replace:
             text = text_input
 
