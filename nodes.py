@@ -114,6 +114,46 @@ MODELS = Models()
 MODELS.load()
 
 
+class LLMPrependAppend:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "text_input": ("STRING", {
+                    "forceInput": True,
+                    "multiline": True,
+                }),
+            },
+            "optional": {
+                "prefix": ("STRING", {
+                    "multiline": True,
+                }),
+                "suffix": ("STRING", {
+                    "multiline": True,
+                }),
+            }
+        }
+
+    TITLE = "Prepend/Append"
+
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("text",)
+
+    FUNCTION = "execute"
+
+    CATEGORY = "YALLM"
+
+    def execute(self, text_input, prefix=None, suffix=None):
+        if prefix is None:
+            prefix = ""
+        if suffix is None:
+            suffix = ""
+
+        text = prefix + text_input + suffix
+
+        return (text,)
+
+
 class LLMTextLatch:
     @classmethod
     def INPUT_TYPES(cls):
@@ -545,6 +585,7 @@ async def llm_models(request: Request):
 
 
 NODE_CLASS_MAPPINGS = {
+    "LLMPrependAppend": LLMPrependAppend,
     "LLMTextLatch": LLMTextLatch,
     "LLMProvider": LLMProvider,
     "LLMModel": LLMModelNode,

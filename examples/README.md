@@ -16,4 +16,4 @@ The YALLM nodes query a (vision) LLM, asking for a description of the loaded ima
 
 ## prompt-optimizer
 
-Asks the LLM to optimize a prompt by word count while keeping descriptive details. Uses the "String Function" node from <https://github.com/pythongosssss/ComfyUI-Custom-Scripts/> in order to prepend some text to the original prompt in order to use it as a system prompt.
+Asks the LLM to optimize a prompt by word count while keeping descriptive details. Uses the "Prepend/Append" node in order to prepend some text to the original prompt in order to use it as a system prompt.

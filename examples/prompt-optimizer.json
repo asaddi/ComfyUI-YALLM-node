@@ -1,54 +1,7 @@
 {
-  "last_node_id": 5,
-  "last_link_id": 4,
+  "last_node_id": 6,
+  "last_link_id": 7,
   "nodes": [
-    {
-      "id": 4,
-      "type": "StringFunction|pysssss",
-      "pos": {
-        "0": 0,
-        "1": 350
-      },
-      "size": {
-        "0": 400,
-        "1": 244
-      },
-      "flags": {},
-      "order": 2,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "text_b",
-          "type": "STRING",
-          "link": 2,
-          "widget": {
-            "name": "text_b"
-          },
-          "shape": 7
-        }
-      ],
-      "outputs": [
-        {
-          "name": "STRING",
-          "type": "STRING",
-          "links": [
-            3
-          ],
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "StringFunction|pysssss"
-      },
-      "widgets_values": [
-        "append",
-        "no",
-        "Use the following text as reference:\n",
-        "",
-        "",
-        "Use the following text as reference:\n\"A beautiful, serene landscape unfolds before us, with rolling hills and lush greenery stretching as far as the eye can see. A delicate, antique glass bottle lies abandoned on a rocky outcropping, its transparent walls glowing with an ethereal light that seems almost otherworldly. The bottle appears to be filled with a deep, rich purple liquid that perfectly captures the color of a distant galaxy, with swirling clouds of gas and dust visible within. The surrounding landscape is bathed in a soft, golden light, with the warm rays of the sun casting a gentle glow across the scene. A few wispy clouds drift lazily across the sky, adding a sense of depth and atmosphere to the already breathtaking view. The overall mood is one of peaceful contemplation, as if the viewer has stumbled upon a secret, hidden world that exists just beyond the edge of reality.\""
-      ]
-    },
     {
       "id": 5,
       "type": "LLMTextLatch",
@@ -91,50 +44,6 @@
       ]
     },
     {
-      "id": 2,
-      "type": "LLMTextLatch",
-      "pos": {
-        "0": -450,
-        "1": 350
-      },
-      "size": {
-        "0": 400,
-        "1": 200
-      },
-      "flags": {},
-      "order": 0,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "text_input",
-          "type": "STRING",
-          "link": null,
-          "widget": {
-            "name": "text_input"
-          },
-          "shape": 7
-        }
-      ],
-      "outputs": [
-        {
-          "name": "text",
-          "type": "STRING",
-          "links": [
-            2
-          ],
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "LLMTextLatch"
-      },
-      "widgets_values": [
-        "\"A beautiful, serene landscape unfolds before us, with rolling hills and lush greenery stretching as far as the eye can see. A delicate, antique glass bottle lies abandoned on a rocky outcropping, its transparent walls glowing with an ethereal light that seems almost otherworldly. The bottle appears to be filled with a deep, rich purple liquid that perfectly captures the color of a distant galaxy, with swirling clouds of gas and dust visible within. The surrounding landscape is bathed in a soft, golden light, with the warm rays of the sun casting a gentle glow across the scene. A few wispy clouds drift lazily across the sky, adding a sense of depth and atmosphere to the already breathtaking view. The overall mood is one of peaceful contemplation, as if the viewer has stumbled upon a secret, hidden world that exists just beyond the edge of reality.\"",
-        true,
-        ""
-      ]
-    },
-    {
       "id": 1,
       "type": "LLMProvider",
       "pos": {
@@ -146,7 +55,7 @@
         "1": 106
       },
       "flags": {},
-      "order": 1,
+      "order": 0,
       "mode": 0,
       "inputs": [],
       "outputs": [
@@ -203,7 +112,7 @@
         {
           "name": "system_prompt",
           "type": "STRING",
-          "link": 3,
+          "link": 7,
           "widget": {
             "name": "system_prompt"
           },
@@ -230,6 +139,93 @@
         "Optimize the given text-to-image prompt for word count. Try to keep as many descriptive details as possible.\n\nOUTPUT ONLY THE MODIFIED PROMPT.",
         ""
       ]
+    },
+    {
+      "id": 2,
+      "type": "LLMTextLatch",
+      "pos": {
+        "0": -450,
+        "1": 350
+      },
+      "size": {
+        "0": 400,
+        "1": 200
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "text_input",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "text_input"
+          },
+          "shape": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "text",
+          "type": "STRING",
+          "links": [
+            6
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LLMTextLatch"
+      },
+      "widgets_values": [
+        "\"A beautiful, serene landscape unfolds before us, with rolling hills and lush greenery stretching as far as the eye can see. A delicate, antique glass bottle lies abandoned on a rocky outcropping, its transparent walls glowing with an ethereal light that seems almost otherworldly. The bottle appears to be filled with a deep, rich purple liquid that perfectly captures the color of a distant galaxy, with swirling clouds of gas and dust visible within. The surrounding landscape is bathed in a soft, golden light, with the warm rays of the sun casting a gentle glow across the scene. A few wispy clouds drift lazily across the sky, adding a sense of depth and atmosphere to the already breathtaking view. The overall mood is one of peaceful contemplation, as if the viewer has stumbled upon a secret, hidden world that exists just beyond the edge of reality.\"",
+        true,
+        ""
+      ]
+    },
+    {
+      "id": 6,
+      "type": "LLMPrependAppend",
+      "pos": {
+        "0": 0,
+        "1": 350
+      },
+      "size": [
+        400,
+        200
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "text_input",
+          "type": "STRING",
+          "link": 6,
+          "widget": {
+            "name": "text_input"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "text",
+          "type": "STRING",
+          "links": [
+            7
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LLMPrependAppend"
+      },
+      "widgets_values": [
+        "",
+        "Use the following text as reference:\n",
+        ""
+      ]
     }
   ],
   "links": [
@@ -242,27 +238,27 @@
       "LLMMODEL"
     ],
     [
-      2,
-      2,
-      0,
-      4,
-      0,
-      "STRING"
-    ],
-    [
-      3,
-      4,
-      0,
-      3,
-      3,
-      "STRING"
-    ],
-    [
       4,
       3,
       0,
       5,
       0,
+      "STRING"
+    ],
+    [
+      6,
+      2,
+      0,
+      6,
+      0,
+      "STRING"
+    ],
+    [
+      7,
+      6,
+      0,
+      3,
+      3,
       "STRING"
     ]
   ],
@@ -270,10 +266,10 @@
   "config": {},
   "extra": {
     "ds": {
-      "scale": 0.9090909090909091,
+      "scale": 0.7513148009015777,
       "offset": [
-        111.69999999999979,
-        88.6999999999999
+        320.79927272727275,
+        220.6500000000004
       ]
     }
   },
