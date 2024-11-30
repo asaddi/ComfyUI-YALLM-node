@@ -12,6 +12,8 @@ from pydantic import BaseModel
 import torchvision.transforms.functional as F
 import yaml
 
+from .utils import PromptUtils, WorkflowUtils
+
 from server import PromptServer
 
 
@@ -119,19 +121,28 @@ class LLMPrependAppend:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "text_input": ("STRING", {
-                    "forceInput": True,
-                    "multiline": True,
-                }),
+                "text_input": (
+                    "STRING",
+                    {
+                        "forceInput": True,
+                        "multiline": True,
+                    },
+                ),
             },
             "optional": {
-                "prefix": ("STRING", {
-                    "multiline": True,
-                }),
-                "suffix": ("STRING", {
-                    "multiline": True,
-                }),
-            }
+                "prefix": (
+                    "STRING",
+                    {
+                        "multiline": True,
+                    },
+                ),
+                "suffix": (
+                    "STRING",
+                    {
+                        "multiline": True,
+                    },
+                ),
+            },
         }
 
     TITLE = "Prepend/Append"
@@ -185,12 +196,14 @@ class LLMTextLatch:
             "hidden": {
                 "unique_id": "UNIQUE_ID",
                 "prompt": "PROMPT",
+                "extra_pnginfo": "EXTRA_PNGINFO",
             },
         }
 
     @classmethod
     def VALIDATE_INPUTS(cls, text):
         # Always valid, even if empty
+        # TODO I don't think this is necessary
         return True
 
     TITLE = "Text Latch"
@@ -204,24 +217,29 @@ class LLMTextLatch:
 
     CATEGORY = "YALLM"
 
-    def check_lazy_status(self, text, replace, unique_id, prompt, text_input=None):
-        node_info = prompt.get(str(unique_id), {})
-        text_input_input = node_info.get("inputs", {}).get("text_input", None)
-        # Do we have something connected to text_input?
-        if text_input_input is not None:
-            # Require whatever is connected to text_input to be evaluated
-            # contingent on replace.
-            if text_input is None and replace:
+    def check_lazy_status(
+        self, text, replace, unique_id, prompt, extra_pnginfo, text_input=None
+    ):
+        # Require whatever is connected to text_input to be evaluated
+        # contingent on replace.
+        if replace and text_input is None:
+            # Do we have something connected to text_input?
+            pu = PromptUtils(prompt)
+            if pu.is_input_connected(unique_id, "text_input"):
                 return ["text_input"]
         # All good, nothing else needs to be evaluated
         return []
 
-    def execute(self, text, replace, unique_id, prompt, text_input=None):
+    def execute(self, text, replace, unique_id, prompt, extra_pnginfo, text_input=None):
         if text_input is not None and replace:
             text = text_input
 
         if text is None:
             text = ""
+
+        # Save the current value in the outgoing metadata
+        wfu = WorkflowUtils(extra_pnginfo)
+        wfu.set_widget(unique_id, 0, text)
 
         # An oddity: the values of the UI dictionary have to be wrapped in
         # a tuple/list, just like the result?
