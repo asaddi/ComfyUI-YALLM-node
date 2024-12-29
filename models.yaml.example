@@ -6,6 +6,16 @@ models:
     api_key: none
     model: whatever
 
+  - name: "[LOCAL] LM Studio"
+    base_url: http://localhost:1234/v1
+    api_key: none
+    model: changeme
+
+  - name: "[LOCAL] Ollama"
+    base_url: http://localhost:11434/v1
+    api_key: none
+    model: changeme
+
 # Example of using a remote endpoint
 # If prefixed with "os.environ/" (similar to LiteLLM), base_url and/or api_key
 # will take their value from the named environment variable.
