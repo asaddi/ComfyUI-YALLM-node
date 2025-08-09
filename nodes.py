@@ -431,7 +431,10 @@ class LLMModel:
 
         # TODO Since we're not streaming, we'll need some sort of timeout. How to specify that?
 
-        return output.choices[0].message.content
+        if output.choices:
+            return output.choices[0].message.content
+        else:
+            return ""
 
 
 class LLMProvider:
