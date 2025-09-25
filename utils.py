@@ -1,3 +1,4 @@
+# Copyright (c) 2024 Allan Saddi <allan@saddi.com>
 class PromptUtils:
     def __init__(self, prompt):
         self.prompt = prompt
@@ -68,7 +69,7 @@ class WorkflowUtils:
             and (workflow := self.extra_pnginfo.get("workflow")) is not None
             and (nodes := workflow.get("nodes")) is not None
         ):
-            node_id = int(node_id)
+            node_id = str(node_id)
             # TODO For the time being, we aren't caching anything.
             # Concievably, if there are a large number of nodes, a lot of time
             # could be wasted searching.
@@ -87,3 +88,18 @@ class WorkflowUtils:
             # TODO When would there be a mismatch?
             if slot < len(values):
                 values[slot] = value
+
+
+class AnyType(str):
+    def __ne__(self, other):
+        if self == "*":
+            # If we're the wildcard, match anything
+            return False
+        return super().__ne__(other)
+
+
+class ComboType(str):
+    def __ne__(self, other):
+        if self == "*" and isinstance(other, list):
+            return False
+        return True
