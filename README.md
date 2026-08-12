@@ -1,3 +1,5 @@
+
+
 # Yet Another LLM Node (for ComfyUI)
 
 Yet another set of LLM nodes for [ComfyUI](https://github.com/comfyanonymous/ComfyUI). This one only supports OpenAI-like APIs, but of course can be used with local LLM providers such as [llama.cpp](https://github.com/ggerganov/llama.cpp) (and ollama, LM Studio, among many others).
@@ -68,6 +70,10 @@ This is basically "Show Text" with memory. Whenever the node is executed, if the
 The input is optional, meaning you can mute the node leading into it or even disconnect it.
 
 The node will output whatever is currently being displayed in the textbox. The node text will also be saved in exported workflows and generated images.
+
+## "Prepend/Append" Node
+
+A simple utility node that takes a text input and optionally adds a prefix and/or suffix to it. This is useful for dynamically injecting instructions or context into prompts without altering the source text, as demonstrated in the `prompt-optimizer` example workflow.
 
 ## My Related Projects
 
