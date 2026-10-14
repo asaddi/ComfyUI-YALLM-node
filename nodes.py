@@ -6,9 +6,9 @@ from typing import Any, Optional
 
 from aiohttp import web
 from aiohttp.web_request import Request
-import openai
 from PIL.Image import Image
 from pydantic import BaseModel
+import requests
 import torchvision.transforms.functional as F
 import yaml
 
@@ -347,20 +347,19 @@ SamplerSetting = tuple[str, Any]
 
 class LLMModel:
     def __init__(self, prov_def: ProviderDefinition, model: str | None = None):
-        self._llm = openai.OpenAI(
-            base_url=prov_def.resolve_base_url(),
-            api_key=(
-                prov_def.resolve_api_key() or "none"
-            ),  # openai package requires something for API key
-        )
+        self._base_url = prov_def.resolve_base_url()
+        self._headers = {}
+        if (api_key := prov_def.resolve_api_key()) and api_key != "none":
+            self._headers["authorization"] = f"Bearer {api_key}"
         if model is None:
             self._model = getattr(prov_def, "model", None)
         else:
             self._model = model
 
     def get_models(self):
-        models = list(self._llm.models.list())
-        return [m.id for m in models]
+        with requests.get(self._base_url + "/models", headers=self._headers) as r:
+            models_json = r.json()
+        return [m["id"] for m in models_json["data"]]
 
     def chat_completion(
         self,
@@ -404,35 +403,32 @@ class LLMModel:
 
         sampler_order = []
         extra_args = {}
-        extra_body = {}
         for k, v in samplers:
             sampler_order.append(k)
-            if k in (
-                "temperature",
-                "top_p",
-            ):  # The only ones supported directly by openai package
-                extra_args[k] = v
-            else:
-                # The rest have to go into "extra_body"
-                extra_body[k] = v
-        extra_body["samplers"] = (
+            extra_args[k] = v
+        extra_args["samplers"] = (
             sampler_order  # Hopefully won't cause an issue for non-llama.cpp endpoints
         )
 
         if seed is not None:
             extra_args["seed"] = seed
 
-        # print(f'extra_args = {repr(extra_args)}')
-        # print(f'extra_body = {repr(extra_body)}')
+        # print(f"extra_args = {repr(extra_args)}")
 
-        output = self._llm.chat.completions.create(
-            messages=messages, model=self._model, extra_body=extra_body, **extra_args
-        )
+        req_json = {
+            "model": self._model,
+            "messages": messages,
+        }
+        req_json.update(extra_args)
 
-        # TODO Since we're not streaming, we'll need some sort of timeout. How to specify that?
+        # TODO Since we're not streaming, we'll need some sort of timeout. TODO specify that
+        with requests.post(
+            self._base_url + "/chat/completions", json=req_json, headers=self._headers
+        ) as r:
+            output = r.json()
 
-        if output.choices:
-            return output.choices[0].message.content
+        if choices := output.get("choices", []):
+            return choices[0]["message"]["content"]
         else:
             return ""
 

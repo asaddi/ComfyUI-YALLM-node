@@ -1,7 +1,6 @@
-openai
-pydantic
-
 # These should already be installed by ComfyUI
 pillow
+pydantic
 pyyaml
+requests
 torchvision
