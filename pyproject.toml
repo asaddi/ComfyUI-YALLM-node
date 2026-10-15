@@ -4,9 +4,11 @@ description = "Yet another set of LLM nodes for ComfyUI (for local/remote OpenAI
 version = "1.4.0"
 license = {file = "LICENSE.txt"}
 dependencies = [
-    "openai",
+    "pillow",
     "pydantic",
-    "pyyaml"
+    "pyyaml",
+    "requests",
+    "torchvision"
 ]
 
 [project.urls]

@@ -418,6 +418,7 @@ class LLMModel:
         req_json = {
             "model": self._model,
             "messages": messages,
+            "stream": False,
         }
         req_json.update(extra_args)
 
